@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Pengolahan Data & Algoritma</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fb;color:#1f2937}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:white;border-radius:16px;padding:24px;box-shadow:0 6px 24px #00000012;margin-bottom:20px}
+h1,h2{margin-top:0}
+.hidden{display:none!important}
+label{display:block;font-weight:700;margin:14px 0 6px}
+input,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px}
+button{border:0;border-radius:9px;padding:11px 16px;cursor:pointer;font-weight:700}
+.primary{background:#2563eb;color:white}.secondary{background:#e5e7eb;color:#111827}.danger{background:#dc2626;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.progress{height:10px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin:15px 0}
+.progress>div{height:100%;background:#2563eb;width:0}
+.navgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(45px,1fr));gap:7px;margin-top:15px}
+.navgrid button{padding:9px;background:#e5e7eb}.navgrid button.active{background:#2563eb;color:white}.navgrid button.answered{outline:3px solid #93c5fd}
+.option{display:block;border:1px solid #dbe3ee;padding:12px;margin:9px 0;border-radius:10px;cursor:pointer}
+.option:hover{background:#f8fafc}
+.option input{width:auto;margin-right:8px}
+.review{margin-top:18px;padding:14px;border-radius:10px}
+.correct{background:#dcfce7;border:1px solid #86efac}.wrong{background:#fee2e2;border:1px solid #fca5a5}
+.match-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;margin:10px 0}
+.symbol{border:1px solid #cbd5e1;border-radius:10px;padding:12px;text-align:center;background:#f8fafc;font-size:20px}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #dbe3ee;padding:9px;text-align:left}th{background:#eff6ff}
+.small{font-size:13px;color:#64748b}
+.warning{padding:12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa}
+#quizArea{user-select:none}
+@media(max-width:650px){.match-row{grid-template-columns:1fr}.container{padding:12px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="loginCard" class="card">
+    <h1>Quiz Pengolahan Data & Algoritma</h1>
+    <p>Isi identitas dan password sebelum mengerjakan.</p>
+    <div class="warning">Peringatan: berpindah tab/jendela atau keluar dari halaman quiz akan dianggap pelanggaran dan quiz diulang dari awal.</div>
+    <label>Nama Siswa</label><input id="studentName" placeholder="Masukkan nama lengkap">
+    <label>Kelas</label><input id="studentClass" placeholder="Contoh: XI RPL 1">
+    <label>Password</label><input id="password" type="password" placeholder="Masukkan password">
+    <button class="primary" onclick="startQuiz()">Mulai Quiz</button>
+    <p id="loginMsg" class="small"></p>
+  </div>
+
+  <div id="quizCard" class="card hidden">
+    <div id="quizArea">
+      <div class="topbar">
+        <div><b id="identity"></b></div>
+        <div>Soal <b id="qNo"></b>/18</div>
+      </div>
+      <div class="progress"><div id="progress"></div></div>
+      <div id="question"></div>
+      <div id="review"></div>
+      <div class="topbar" style="margin-top:20px">
+        <button class="secondary" id="prevBtn" onclick="prevQuestion()">← Sebelumnya</button>
+        <button class="primary" id="nextBtn" onclick="nextQuestion()">Berikutnya →</button>
+      </div>
+      <h3>Nomor Soal</h3>
+      <div id="navgrid" class="navgrid"></div>
+    </div>
+  </div>
+
+  <div id="resultCard" class="card hidden">
+    <h2>Hasil Quiz</h2>
+    <div id="result"></div>
+    <button class="primary" onclick="location.reload()">Selesai</button>
+  </div>
+
+  <div class="card">
+    <h2>Rekap Siswa yang Mengerjakan</h2>
+    <p class="small">Rekap tersimpan di browser perangkat ini. Guru dapat menghapus rekap dengan tombol di bawah.</p>
+    <div id="recap"></div>
+    <button class="danger" onclick="clearRecap()">Hapus Rekap</button>
+  </div>
+</div>
+
+<script>
+const QUIZ_PASSWORD = "KELAS2026";
+
+const questions = [
+{q:"Jika Perusahaan komputer mengalami kegagalan dan kesalahan dalam memprediksi presentase kenaikan penjualan berdasarkan data hasil penelitian kuantitatif yang dilakukan maka dampak yang mungkin muncul adalah ….",opts:["Tidak berpengaruh sama sekali","Meningkatkan reliabilitas temuan","Mempercepat proses analisis data.","Hanya mempengaruhi analisis deskriptif","Menyebabkan estimasi yang bias dan tidak akurat"],a:4},
+{match:true,q:"Cocokkan pernyataan dengan istilah yang tepat.",pairs:[
+["Memastikan data telah memenuhi standar kualitas","Data cleaning"],
+["Menemukan pola hubungan antardata","Pattern analysis"],
+["Mengidentifikasi kelompok data berdasarkan kesamaan","Metode clustering"],
+["Tahapan akhir data mining","Sharing final report"],
+["Memperkirakan nilai data di masa depan","Forecasting"],
+["Jawaban dipengaruhi Pewawancara sehingga jawaban salah","Interviewer bias"],
+["Tidak Konsisten","Error (noisy)"],
+["Penurunan kepercayaan pada ketidakjelasan pajanan terjadi sebelum/setelah sebab akibat","Temporal Ambiguity"]
+],choices:["Forecasting","Sharing final report","Metode clustering","Pattern analysis","Data cleaning","Error (noisy)","Interviewer bias","Temporal Ambiguity"]},
+{q:"Cendekiawan Muslim yang berpengaruh dalam sejarah sains dunia dibidang matematikawan, astronom dan geograf dari persia bernama",opts:["Al-Khawarizmi","Mariam Al-Ijliya","Abu Al-Wafa Al-Buzjani","Umar Khayyam","Ibnu Sina"],a:0},
+{q:"Dalam penelitian, terdapat beberapa perbedaan yang menimbulkan bias informasi. Perbedaan utama antara bias informasi dan confounding adalah ….",opts:["Bias informasi mengukur akurasi, sedangkan confounding mengukur reliabilitas","Bias informasi hanya terjadi dalam studi kualitatif, sedangkan confounding hanya terjadi dalam studi kuantitatif","Bias informasi terjadi dalam proses analisis data, sedangkan confounding terjadi dalam proses pengumpulan data","Bias informasi dapat dihilangkan dengan randomisasi, sedangkan confounding tidak dapat diatasi dengan randomisasi","Bias informasi terkait dengan cara pengumpulan data, sedangkan confounding terkait dengan variabel luar yang mempengaruhi hasil penelitian"],a:4},
+{q:"Dalam sebuah penelitian untuk mengukur efektivitas alat baru, tim riset mengumpulkan data dari sekelompok kecil pengguna terlebih dahulu untuk mengevaluasi kinerja instrumen sebelum digunakan secara luas. Metode yang digunakan untuk menguji instrumen pada kelompok kecil responden ini adalah ….",opts:["Validitas wajah (face validity)","Validitas berdasarkan kriteria (criterion-related validity)","Validitas berdasarkan isi (content validity)","Uji coba lapangan (pilot test)","Triangulasi"],a:3},
+{q:"Dalam pengolahan data, sangat penting bagi seorang administrator data untuk menerapkan proses reduksi data. Pernyataan yang menjelaskan fungsi proses tersebut adalah …",opts:["Menambahkan lebih banyak variabel ke analisis","Menggabungkan semua dataset menjadi satu","Meningkatkan jumlah data yang tersedia","Meningkatkan kualitas data untuk analisis","Membuat laporan akhir."],a:3},
+{q:"Representasi visual dari algoritma yang menunjukkan aliran logika dan urutan kegiatan dalam program disebut...",opts:["Flowchart","Algoritma","Java","Javascript","Pascal"],a:0},
+{q:"Dalam tahapan preprocessing terdapat beberapa fase yang harus dilakukan untuk memperoleh data valid. Pernyataan yang menggambarkan tujuan utama dari proses data reduction dalam data processing adalah …",opts:["Mengisi nilai yang hilang","Menemukan pola dan tren dalam data","Menggabungkan data dari berbagai sumber","Mengubah data ke dalam format yang sesuai untuk analisis lebih lanjut","Mengurangi volume data, tetapi tetap mempertahankan informasi penting"],a:4},
+{q:"Dalam proses validasi data, visualisasi data yang menggambarkan kondisi data terbaru yang ditampilkan. Tujuannya adalah …",opts:["Hanya untuk estetika","Untuk menggantikan semua metode statistika","Untuk mengurangi jumlah data yang harus dianalisis","Untuk memperlihatkan hubungan kompleks dengan data","Sebagai satu-satunya metode analisis yang diperlukan"],a:3},
+{match:true,q:"Jawablah dan cocokkan nama simbol sesuai dengan fungsinya.",pairs:[
+["Menyatakan Permulaan atau akhir suatu program","Terminal"],
+["Menyatakan proses input atau output tanpa tergantung jenis peralatannya","Input/output"],
+["Menyatakan suatu tindakan process yang dilakukan oleh komputer","Process"],
+["Menunjukkan suatu kondisi tertentu yang akan menghasilkan dua kemungkinan jawaban ya/tidak","Decision"],
+["Menyatakan sambungan dari proses ke proses lainnya dalam halaman yang sama","Conector"],
+["Menyatakan sambungan dari proses ke proses lainnya dalam halaman yang berbeda","Offline conector"],
+["Menyatakan penyediaan tempat penyimpanan suatu pengolahan untuk memberi harga awal","Predifined Process"],
+["Menyatakan input berasal dari kartu atau output ditulis ke kartu","Punched card"],
+["Mencetak keluaran dalam bentuk document","Document Flow"],
+["Menyatakan jalannya arus suatu proses","Flow"]
+],choices:["Terminal","Input/output","Process","Decision","Conector","Offline conector","Predifined Process","Punched card","Document Flow","Flow"]},
+{q:"Serangkaian langkah bertahap untuk menyelesaikan masalah atau melakukan tugas yang diatur dengan cara logis dan terstruktur disebut ...",opts:["Flowchart","Algoritma","Java","Javascript","Pascal"],a:1},
+{q:"Pernyataan berikut yang mempresentasikan tujuan utama dari data cleaning dalam data processing adalah …",opts:["Mengurangi volume data","Meningkatkan kecepatan analisis data","Mengurangi kebutuhan akan data","Membuat data menjadi lebih menarik","Meningkatkan akurasi, kelengkapan, konsistensi dan kepercayaan data."],a:4},
+{q:"Sebuah Perusahaan e-commerce melakukan penelitian untuk memahami preferensi pengguna terhadap platform mereka. Namun, mereka hanya menyertakan responden yang aktif berbelanja online. Hal ini dapat menyebabkan bias dalam hasil penelitian karena responden yang tidak aktif tidak disertakan, sehingga hasilnya mungkin tidak mencerminkan seluruh populasi pengguna. Jenis bias yang terjadi dalam situasi ini adalah …",opts:["Healthy worker effect","Berkson’s bias","Self selection bias","Inclusion/exclusion bias","Diagnostic bias"],a:3},
+{q:"Salah satu Teknik data cleaning adalah dengan menangani nilai yang hilang atau kosong (null). Salah satu Teknik yang tepat untuk mendukung proses tersebut adalah …",opts:["Menggunakan model regresi non linear kompleks","Menggunakan nilai rata-rata","Menggunakan nilai median","Menggunakan nilai modus","Menghapus baris data"],a:2},
+{q:"Dalam melakukan verifikasi data yang dikelola oleh komputer. Dikenal istilah validitas logis. Maksud dari konsep tersebut adalah …",opts:["Pengukuran keandalan data","Pengukuran konsistensi data","Pengukuran keakuratan hasil penelitian","Pengukuran kemampuan data untuk digeneralisasi","Pengukuran seberapa baik alat ukur menerjemahkan teori ke dalam operasionalisasi"],a:4},
+{q:"Ketika menggunakan pemrograman R, metode yang tepat untuk mendeteksi outlier dalam dataset adalah ….",opts:["Mengabaikan semua data yang tidak sesuai dengan ekspektasi","Menggunakan mean sebagai satu-satunya metode analisis","Mengumpulkan lebih banyak data","Menggunakan interquartile range","Menganalisis variansi data"],a:3},
+{q:"Metode yang digunakan untuk mengidentifikasi pola khusus dalam data dan memprediksi keputusan bisnis di masa depan adalah …",opts:["Clustering","Regression","Forecasting","Association","Classification"],a:2},
+{q:"Sistem pengolahan data berbasis elektronik menawarkan berbagai keunggulan yang signifikan dibandingkan dengan metode manual. Keunggulan dari sistem pengolahan data berbasis elektronik adalah ..",opts:["Lebih lambat dalam pemrosesan data","Lebih ekonomis dalam penggunaan sumber daya","Lebih mudah membuat kesalahan dalam pengolahan data","Memiliki tingkat akurasi dan efisiensi yang lebih tinggi","Membutuhkan lebih banyak tenaga kerja untuk operasional"],a:3}
+];
+
+let current=0, answers=Array(questions.length).fill(null), started=false, locked=false;
+let session={name:"",kelas:""};
+
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+
+function startQuiz(){
+  const name=document.getElementById("studentName").value.trim();
+  const kelas=document.getElementById("studentClass").value.trim();
+  const pw=document.getElementById("password").value;
+  const msg=document.getElementById("loginMsg");
+  if(!name||!kelas||!pw){msg.textContent="Nama, kelas, dan password wajib diisi.";return}
+  if(pw!==QUIZ_PASSWORD){msg.textContent="Password salah.";return}
+  session={name,kelas}; started=true;
+  document.getElementById("loginCard").classList.add("hidden");
+  document.getElementById("quizCard").classList.remove("hidden");
+  document.getElementById("identity").textContent=`${name} — ${kelas}`;
+  renderNav();renderQuestion();
+  document.addEventListener("visibilitychange",antiTab);
+  window.addEventListener("blur",antiWindow);
+}
+
+function antiTab(){if(started&&!locked&&document.hidden) restartFromViolation("Anda berpindah tab/jendela. Quiz diulang dari awal.");}
+function antiWindow(){if(started&&!locked&&document.hidden) restartFromViolation("Anda berpindah jendela. Quiz diulang dari awal.");}
+
+function restartFromViolation(msg){
+  locked=true;
+  alert(msg);
+  answers=Array(questions.length).fill(null); current=0;
+  locked=false; renderQuestion(); renderNav();
+}
+
+function renderNav(){
+  document.getElementById("navgrid").innerHTML=questions.map((_,i)=>
+    `<button class="${i===current?'active ':''}${answers[i]!==null?'answered':''}" onclick="goQuestion(${i})">${i+1}</button>`).join("");
+}
+
+function renderQuestion(){
+  const item=questions[current];
+  document.getElementById("qNo").textContent=current+1;
+  document.getElementById("progress").style.width=((current+1)/questions.length*100)+"%";
+  let html=`<h2>${current+1}. ${esc(item.q)}</h2>`;
+  if(item.match){
+    html+=`<p class="small">Pilih pasangan yang sesuai untuk setiap pernyataan.</p>`;
+    item.pairs.forEach((p,i)=>{
+      const val=answers[current]?.[i]||"";
+      html+=`<div class="match-row"><div class="symbol">${esc(p[0])}</div><select onchange="setMatch(${i},this.value)"><option value="">-- pilih jawaban --</option>${item.choices.map(c=>`<option ${c===val?'selected':''}>${esc(c)}</option>`).join("")}</select></div>`;
+    });
+  }else{
+    item.opts.forEach((o,i)=>{
+      const checked=answers[current]===i?"checked":"";
+      html+=`<label class="option"><input type="radio" name="q${current}" ${checked} onchange="setAnswer(${i})"> ${String.fromCharCode(65+i)}. ${esc(o)}</label>`;
+    });
+  }
+  document.getElementById("question").innerHTML=html;
+  document.getElementById("prevBtn").disabled=current===0;
+  document.getElementById("nextBtn").textContent=current===questions.length-1?"Kumpulkan":"Berikutnya →";
+  showReview();
+  renderNav();
+}
+
+function setAnswer(i){answers[current]=i;showReview();renderNav();}
+function setMatch(i,val){
+  if(!Array.isArray(answers[current])) answers[current]=Array(questions[current].pairs.length).fill("");
+  answers[current][i]=val;showReview();renderNav();
+}
+function isComplete(i){
+  if(questions[i].match) return Array.isArray(answers[i])&&answers[i].every(Boolean);
+  return answers[i]!==null;
+}
+function getCorrect(i){
+  const item=questions[i];
+  if(!item.match)return answers[i]===item.a;
+  return item.pairs.every((p,k)=>answers[i]?.[k]===p[1]);
+}
+function showReview(){
+  const rev=document.getElementById("review");
+  if(!isComplete(current)){rev.innerHTML="";return}
+  const ok=getCorrect(current);
+  rev.className="review "+(ok?"correct":"wrong");
+  rev.innerHTML=ok?"✓ Jawaban benar.":"✗ Jawaban belum tepat. Silakan periksa kembali sebelum melanjutkan.";
+}
+function goQuestion(i){current=i;renderQuestion();}
+function prevQuestion(){if(current>0){current--;renderQuestion();}}
+function nextQuestion(){
+  if(!isComplete(current)){alert("Soal ini belum dijawab lengkap.");return}
+  if(current<questions.length-1){current++;renderQuestion();}else finishQuiz();
+}
+function finishQuiz(){
+  if(answers.some((_,i)=>!isComplete(i))){alert("Masih ada soal yang belum lengkap.");return}
+  let score=0; answers.forEach((_,i)=>{if(getCorrect(i))score++});
+  const percent=Math.round(score/questions.length*100);
+  const rec=JSON.parse(localStorage.getItem("quizRecap")||"[]");
+  rec.push({name:session.name,kelas:session.kelas,score,percent,time:new Date().toLocaleString("id-ID")});
+  localStorage.setItem("quizRecap",JSON.stringify(rec));
+  document.getElementById("quizCard").classList.add("hidden");
+  document.getElementById("resultCard").classList.remove("hidden");
+  document.getElementById("result").innerHTML=`<h3>${score}/${questions.length} benar — ${percent}%</h3><p>Nama: <b>${esc(session.name)}</b><br>Kelas: <b>${esc(session.kelas)}</b></p>`;
+  renderRecap();
+}
+function renderRecap(){
+  const rec=JSON.parse(localStorage.getItem("quizRecap")||"[]");
+  if(!rec.length){document.getElementById("recap").innerHTML="<p>Belum ada siswa yang mengerjakan.</p>";return}
+  document.getElementById("recap").innerHTML=`<table><tr><th>No</th><th>Nama</th><th>Kelas</th><th>Nilai</th><th>Waktu</th></tr>${rec.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.kelas)}</td><td>${r.percent}%</td><td>${esc(r.time)}</td></tr>`).join("")}</table>`;
+}
+function clearRecap(){
+  if(confirm("Hapus seluruh rekap pada browser ini?")){localStorage.removeItem("quizRecap");renderRecap();}
+}
+renderRecap();
+</script>
+</body>
+</html>
